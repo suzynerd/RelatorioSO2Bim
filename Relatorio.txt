@@ -1,0 +1,138 @@
+﻿Relatorio de acompanhamento da instalação do sistema operacional Linux no Daruma
+
+12/11
+Início da leitura do livro LINUX FROM SCRATCH (VERSÃO EM PORTUGUES)
+Fonte de apoio: http://goo.gl/7pHA8y
+Tentativa de emular o sistema operacional montado LFS realizada com sucesso.
+
+
+13/11
+Instalação do SO UBUNTU na máquina virtual para prosseguir com os passos do LFS Book.
+O KERNEL do sistema anfitrião foi compilado com gcc e é compatível com  as exigências.
+
+
+25/11
+Criação de arquivo de texto utilizando o "cat"
+
+	cat < teste.txt << "EOF"
+
+Trecho relevante:
+	"O programa chroot (change root) é usado para entrar em um ambiente virtual e inicializar um novo shell cujo o diretório de raiz será definido na partição do LFS. Isto é muito similar a reinicializar e a instruir o kernel para montar a partição LFS como a partição root. O sistema não reinicializa realmente, mas faz um chroot porque criar um sistema inicializável requer o trabalho adicional que não é necessário neste momento. A vantagem principal de “chrooting” é permitir o uso do sistema anfitrião enquanto o LFS estiver sendo configurado. Enquanto espera a compilação de algum pacote terminar, o usuário pode abrir um console virtual diferente (VC) ou o desktop X e continuar usando seu computador normalmente."
+
+-------------------------
+Criando uma nova partição:
+
+Trecho de estudo sobre particionamento de disco
+
+Consulta de partições do sistema através do comando 
+
+	sudo fdisk -l
+
+Em seguida, configuração de novas partições através de
+	
+	sudo cfdisk
+
+Duas novas particões foram criadas, dividindo a memória em partes iguais, sendo uma delas bootavel.
+
+Observação: Após alteração das partições do da Virtul Machine (VM), a linha de comando segue apresentando erros de inicialização e não reconhece o vinculo do sudoers para autenticação do comando sudo.
+
+-----------------------
+
+Maquina virtual quebrada. Realização do processo de instalação de novo SO virtualizado (nome: tads2).
+
+-----------------------
+26/11
+
+Continuação de estudos sobre particionamento.
+
+Criação de novo disco virtualizado pela Virtualbox com tamanho de 40G
+
+divisão do novo disco em 4 partições através do
+	fdisk /dev/sdb
+
+27/11
+
+2.3 Formatação de partições e arquivo de sistema
+
+Partição /dev/sdb1 formatada em ext4,
+criação e formatação de swap de 2GB em dev/sdb5
+	mkswap /dev/sdb5
+
+Obs.: sdb2 deletada
+
+2.4 Montando nova partição
+
+escolhido o ponto de montagem /mnt/lfs para exportar a variável de ambiente LFS
+	export LFS=/mnt/lfs
+
+criado o ponto de montagem do arquivo de sistema
+	mkdir -pv $lfs
+e montado em
+	mount -v -t ext4 /dev/sdb1 $LFS
+
+---
+
+02/12/2013
+
+Criação de diretório de trabalho a partir do comando:
+
+	mkdir -v $LFS/sources 
+
+Em seguida, pasta modificada a partir do comando chmod, a fim de torná-la "writable" e Sticky. Um diretório Sticky, mesmo provendo permissão de escrita a vários usuários, somente pode ter arquivos deletados pelo usuário que o criou.
+	
+	chmod -v a+wt $LFS/sources 
+
+Packages e patches baixados utilizando o comando wget. Este fornece baixa arquivos de uma rede de forma não iterativa, utilizando protocolos http, https, ftp e proxies http. O comando é geralmente associado à função de download recursivo.
+
+Devido a problemas com a máquina onde a virtualização estava sendo rodada, optou-se pela troca de sistema operacional, no entando a maquina virtual criada não foi recuperada
+
+----
+12/12/2013
+
+Nova máquina virtual criada (Ubuntu 12.04) e passos efetuados anteriormente refeitos.
+seguindo para a o capítulo 4: Final Preparations.
+
+----
+16/12/2013
+
+criação do diretório tools em $LFS
+	mkdir -v $LFS/tools
+
+através do comando ln, um link simbólico no sistema principal para a pasta recém-criada tools será feito
+
+Criação de novo grupo de usuários no qual será criado um usuário sem privliégios root.
+	groupadd lfs2
+	useradd -s /bin/bash -g lfs2 -m -k /dev/null lfs2
+
+Criação de novo usuário 'lfs2' (no grupo lfs2) que será usado para a compilação dos pacotes, por não ter permissões root, evitando danificar o pc.
+
+o usuário lfs2 tem acesso irrestrito garantido às pastas tools e sources através do comando:
+	chown -v lfs2 $LFS/tools
+	chown -v lfs2 $LFS/sources
+
+
+4.4 Configurando o ambiente
+definição de dois arquivos base para o shell do interpretador de comandos 'bash':
+	cat > ~/.bash_profile << "EOF"
+	exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
+	EOF
+
+	cat > ~/.bashrc << "EOF"
+	set +h
+	umask 022
+	LFS=/mnt/lfs
+	LC_ALL=POSIX
+	LFS_TGT=$(uname -m)-lfs-linux-gnu
+	PATH=/tools/bin:/bin:/usr/bin
+	export LFS LC_ALL LFS_TGT PATH
+	EOF
+
+Para finalizar a preparação, o comando a seguir é executado para informar ao shell em andamento as diretrizes passadas no arquivo de parâmetro:
+	source ~/.bash_profile
+
+
+20/12/2013
+
+Na etapa 5.3, detalhes importantes foram enfatizados como a criação de links simbolicos para bash, gawk e bison.
+A definição dos links simbolicos causou um loop que impede a procedimentos básicos como a função 'man'.
+A máquina será descartada e Snapshot do dia 16/12 (etapa 4.4) será reutilizado.
